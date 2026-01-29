@@ -66,7 +66,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     "gfybhkgb", "jhgjfgfgdjgf", "ygytfyuhu", "gmjgfc", "sgsfgf", "sgsfgfa",
     "gmjjjkfdhfj", "gmjjjkfdhfjfgjs", "ftvhgjdc", "hoiunljk", "dwadsadw",
     "fsdfdesrsr", "gdfgdfgdh", "gdfgdfgdhgf", "fghkdfhdf", "ufmjfgjhf",
-    "dgjdfjffgkghdgdj", "xcxkj", "xcxjgkj", "ghjgkkj", "tfjfthfg", "dsadsadcc", "dsadsadccx"
+    "dgjdfjffgkghdgdj", "xcxkj", "xcxjgkj", "ghjgkkj", "tfjfthfg", "dsadsadcc", "dsadsadccx",
+    "testing", "billy"
   ];
   
   // Create labelhash to name mapping (ENS tokenIds are labelhashes)

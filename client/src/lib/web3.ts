@@ -1102,6 +1102,7 @@ export class Web3Service {
       // BaseRegistrar for ownership verification and migrated domain events
       const registrarAbi = [
         "event NameRegistered(uint256 indexed id, address indexed owner, uint256 expires)",
+        "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)",
         "function ownerOf(uint256 tokenId) view returns (address)",
         "function nameExpires(uint256 id) view returns (uint256)"
       ];
@@ -1217,6 +1218,65 @@ export class Web3Service {
         }
       } catch (e) {
         console.log("Error fetching BaseRegistrar events:", e);
+      }
+      
+      // 3. Get domains from Transfer events (for migrated domains that may not have NameRegistered events)
+      try {
+        const transferFilter = registrarContract.filters.Transfer(null, ownerAddress);
+        const transferEvents = await registrarContract.queryFilter(transferFilter, fromBlock, currentBlock);
+        
+        console.log("Found", transferEvents.length, "Transfer events to owner");
+        
+        for (const event of transferEvents) {
+          try {
+            const args = (event as any).args;
+            const tokenId = args.tokenId || args[2];
+            const tokenIdStr = tokenId.toString();
+            
+            if (seenTokenIds.has(tokenIdStr)) continue;
+            
+            // Verify current ownership
+            const currentOwner = await registrarContract.ownerOf(tokenId);
+            if (currentOwner.toLowerCase() !== ownerAddress.toLowerCase()) continue;
+            
+            seenTokenIds.add(tokenIdStr);
+            
+            const expires = await registrarContract.nameExpires(tokenId);
+            const expirationDate = new Date(Number(expires) * 1000);
+            
+            // Try to get domain name from backend
+            let domainName = "";
+            try {
+              console.log("Looking up domain name for tokenId:", tokenIdStr);
+              const response = await fetch(`/api/domains/token/${tokenIdStr}`);
+              if (response.ok) {
+                const data = await response.json();
+                domainName = data.name || "";
+                console.log("Found domain name:", domainName);
+              }
+            } catch (lookupErr) {
+              console.log("Backend lookup error for tokenId:", tokenIdStr);
+            }
+            
+            if (domainName) {
+              domains.push({
+                id: tokenIdStr,
+                name: domainName,
+                tokenId: tokenIdStr,
+                owner: currentOwner,
+                expirationDate: expirationDate.toISOString(),
+                exists: true,
+                pricePerYear: domainName.length === 3 ? "100" : domainName.length === 4 ? "70" : "30",
+                records: [],
+                isMigrated: true,
+              });
+            }
+          } catch (err) {
+            continue;
+          }
+        }
+      } catch (e) {
+        console.log("Error fetching Transfer events:", e);
       }
       
       console.log("Found", domains.length, "active domains for owner");
