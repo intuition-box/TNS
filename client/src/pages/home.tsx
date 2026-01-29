@@ -207,32 +207,32 @@ export default function Home() {
 
           {/* Network Information */}
           <Card className="trust-card">
-            <CardContent className="p-8">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6 text-center">
+            <CardContent className="p-4 sm:p-8">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 text-center">
                 Network Information
               </h3>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 <div className="text-center">
-                  <div className="text-trust-blue font-semibold mb-1">Chain ID</div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white" data-testid="chain-id">
+                  <div className="text-trust-blue font-semibold mb-1 text-sm sm:text-base">Chain ID</div>
+                  <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white" data-testid="chain-id">
                     1155
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-trust-blue font-semibold mb-1">Network</div>
-                  <div className="text-lg font-bold text-gray-900 dark:text-white">
+                  <div className="text-trust-blue font-semibold mb-1 text-sm sm:text-base">Network</div>
+                  <div className="text-sm sm:text-lg font-bold text-gray-900 dark:text-white">
                     Intuition Mainnet
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-trust-blue font-semibold mb-1">Currency</div>
+                  <div className="text-trust-blue font-semibold mb-1 text-sm sm:text-base">Currency</div>
                   <div className="text-lg font-bold text-gray-900 dark:text-white">
                     TRUST
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-trust-blue font-semibold mb-1">RPC URL</div>
-                  <div className="text-sm font-mono text-gray-600 dark:text-gray-400 break-all">
+                  <div className="text-trust-blue font-semibold mb-1 text-sm sm:text-base">RPC URL</div>
+                  <div className="text-xs sm:text-sm font-mono text-gray-600 dark:text-gray-400 break-all">
                     intuition.calderachain.xyz
                   </div>
                 </div>
@@ -243,22 +243,22 @@ export default function Home() {
       </section>
 
       {/* Call to Action */}
-      <section className="py-20 bg-trust-dark text-white">
+      <section className="py-12 sm:py-20 bg-trust-dark text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">
             Ready to Get Your .trust Domain?
           </h2>
-          <p className="text-xl text-gray-300 mb-8">
+          <p className="text-base sm:text-xl text-gray-300 mb-6 sm:mb-8 px-2">
             Join thousands of users who trust TNS for their Web3 identity
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/register">
-              <Button className="bg-white text-trust-dark hover:bg-gray-100 px-8 py-3 text-lg" data-testid="cta-register">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
+            <Link href="/register" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto bg-white text-trust-dark hover:bg-gray-100 px-6 sm:px-8 py-3 text-base sm:text-lg min-h-[48px]" data-testid="cta-register">
                 Register Domain
               </Button>
             </Link>
-            <Link href="/manage">
-              <Button variant="outline" className="border-white text-white hover:bg-white hover:text-trust-dark px-8 py-3 text-lg" data-testid="cta-manage">
+            <Link href="/manage" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto border-white text-white hover:bg-white hover:text-trust-dark px-6 sm:px-8 py-3 text-base sm:text-lg min-h-[48px]" data-testid="cta-manage">
                 Manage Domains
               </Button>
             </Link>

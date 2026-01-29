@@ -35,9 +35,9 @@ export function Footer() {
   ];
 
   return (
-    <footer className="bg-trust-dark text-white py-16">
+    <footer className="bg-trust-dark text-white py-10 sm:py-16 safe-bottom">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-4 gap-8 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-12">
           {/* Brand Section */}
           <div className="col-span-2">
             <div className="flex items-center mb-4">

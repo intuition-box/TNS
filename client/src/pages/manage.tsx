@@ -419,8 +419,8 @@ export default function ManagePage() {
           <div
             className={
               viewMode === "grid"
-                ? "grid md:grid-cols-2 xl:grid-cols-3 gap-6"
-                : "space-y-4"
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6"
+                : "space-y-3 sm:space-y-4"
             }
           >
             {filteredAndSortedDomains.map((domain, index) => (

@@ -125,24 +125,24 @@ export function DomainSearch({ onDomainSelect, autoFocus = false, placeholder = 
       )}
 
       {searchResult && (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {/* Main Result */}
           <Card className="trust-card">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="flex items-center">
                   {searchResult.available ? (
-                    <CheckCircle className="text-trust-emerald text-xl mr-3" />
+                    <CheckCircle className="text-trust-emerald h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 flex-shrink-0" />
                   ) : (
-                    <XCircle className="text-red-500 text-xl mr-3" />
+                    <XCircle className="text-red-500 h-5 w-5 sm:h-6 sm:w-6 mr-2 sm:mr-3 flex-shrink-0" />
                   )}
-                  <div>
-                    <span className="font-bold text-lg" data-testid="domain-name">
+                  <div className="flex items-center flex-wrap gap-1.5 sm:gap-2">
+                    <span className="font-bold text-base sm:text-lg" data-testid="domain-name">
                       {searchResult.name}
                     </span>
                     <Badge
                       variant={searchResult.available ? "default" : "destructive"}
-                      className={`ml-2 ${
+                      className={`text-xs ${
                         searchResult.available
                           ? "bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-300"
                           : ""
@@ -155,12 +155,12 @@ export function DomainSearch({ onDomainSelect, autoFocus = false, placeholder = 
                 </div>
                 
                 {searchResult.available && (
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white" data-testid="domain-price">
+                  <div className="text-left sm:text-right pl-7 sm:pl-0">
+                    <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white" data-testid="domain-price">
                       {formatPrice(searchResult.pricing.pricePerYear)}
-                      <span className="text-sm text-gray-500 ml-1">/year</span>
+                      <span className="text-xs sm:text-sm text-gray-500 ml-1">/year</span>
                     </div>
-                    <div className="text-sm text-gray-500" data-testid="pricing-tier">
+                    <div className="text-xs sm:text-sm text-gray-500" data-testid="pricing-tier">
                       {searchResult.pricing.tier}
                     </div>
                   </div>
@@ -170,7 +170,7 @@ export function DomainSearch({ onDomainSelect, autoFocus = false, placeholder = 
               {searchResult.available && (
                 <Button
                   onClick={() => handleDomainSelect(searchResult.name, searchResult.pricing)}
-                  className="w-full mt-4 trust-button"
+                  className="w-full mt-4 trust-button min-h-[44px]"
                   data-testid="register-domain-button"
                 >
                   Register Domain
@@ -182,23 +182,24 @@ export function DomainSearch({ onDomainSelect, autoFocus = false, placeholder = 
           {/* Suggestions */}
           {searchResult.suggestions && searchResult.suggestions.length > 0 && (
             <Card className="trust-card">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Alternative Suggestions</h3>
-                <div className="space-y-3">
+              <CardContent className="p-4 sm:p-6">
+                <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Alternative Suggestions</h3>
+                <div className="space-y-2 sm:space-y-3">
                   {searchResult.suggestions.map((suggestion) => (
                     <div
                       key={suggestion}
-                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                      className="flex items-center justify-between p-2.5 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg gap-2"
                     >
-                      <div className="flex items-center">
-                        <CheckCircle className="text-trust-emerald mr-3 h-4 w-4" />
-                        <span className="font-medium" data-testid={`suggestion-${suggestion}`}>
+                      <div className="flex items-center min-w-0 flex-1">
+                        <CheckCircle className="text-trust-emerald mr-2 sm:mr-3 h-4 w-4 flex-shrink-0" />
+                        <span className="font-medium text-sm sm:text-base truncate" data-testid={`suggestion-${suggestion}`}>
                           {suggestion}
                         </span>
                       </div>
                       <Button
                         variant="outline"
                         size="sm"
+                        className="min-h-[44px] flex-shrink-0"
                         onClick={() => {
                           setSearchQuery(suggestion.replace('.trust', ''));
                           setSearchTerm(suggestion.replace('.trust', ''));

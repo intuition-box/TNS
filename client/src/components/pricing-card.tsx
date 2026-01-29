@@ -21,22 +21,22 @@ interface PricingCardProps {
 export function PricingCard({ tier, onSelect }: PricingCardProps) {
   return (
     <Card
-      className={`relative transition-all duration-200 hover:scale-105 ${
+      className={`relative transition-all duration-200 sm:hover:scale-105 ${
         tier.isPopular
           ? "bg-gradient-to-br from-trust-blue to-trust-violet text-white border-trust-blue"
           : "trust-card hover:border-trust-blue"
       }`}
     >
       {tier.isPopular && (
-        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white/20 backdrop-blur-sm text-white">
+        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white/20 backdrop-blur-sm text-white text-xs">
           Premium
         </Badge>
       )}
       
-      <CardContent className="p-8 text-center">
-        <div className="mb-6">
+      <CardContent className="p-5 sm:p-8 text-center">
+        <div className="mb-4 sm:mb-6">
           <div
-            className={`text-4xl font-bold mb-2 ${
+            className={`text-3xl sm:text-4xl font-bold mb-2 ${
               tier.isPopular ? "text-white" : "text-trust-blue"
             }`}
             data-testid={`price-${tier.characters}-chars`}
@@ -67,16 +67,16 @@ export function PricingCard({ tier, onSelect }: PricingCardProps) {
           </div>
         </div>
 
-        <div className="space-y-3 text-left mb-8">
+        <div className="space-y-2 sm:space-y-3 text-left mb-6 sm:mb-8">
           {tier.features.map((feature, index) => (
             <div key={index} className="flex items-center">
               <Check
-                className={`mr-3 h-4 w-4 ${
+                className={`mr-2 sm:mr-3 h-4 w-4 flex-shrink-0 ${
                   tier.isPopular ? "text-white" : "text-trust-emerald"
                 }`}
               />
               <span
-                className={`text-sm ${
+                className={`text-xs sm:text-sm ${
                   tier.isPopular ? "text-white" : "text-gray-700 dark:text-gray-300"
                 }`}
               >
@@ -89,11 +89,11 @@ export function PricingCard({ tier, onSelect }: PricingCardProps) {
         {onSelect && (
           <Button
             onClick={onSelect}
-            className={
+            className={`min-h-[44px] ${
               tier.isPopular
                 ? "w-full bg-white text-trust-blue hover:bg-gray-100"
                 : "w-full trust-button"
-            }
+            }`}
             data-testid={`select-tier-${tier.characters}-chars`}
           >
             Choose Plan
@@ -146,25 +146,25 @@ export function PricingSection() {
   ];
 
   return (
-    <section className="py-20 bg-white dark:bg-gray-800">
+    <section className="py-12 sm:py-20 bg-white dark:bg-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+        <div className="text-center mb-10 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4">
             Simple & Transparent Pricing
           </h2>
-          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
+          <p className="text-base sm:text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto px-4">
             Domain pricing based on character length, with all fees paid in TRUST tokens
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-4xl mx-auto">
           {pricingTiers.map((tier) => (
             <PricingCard key={tier.characters} tier={tier} />
           ))}
         </div>
 
-        <div className="text-center mt-12">
-          <p className="text-gray-600 dark:text-gray-400">
+        <div className="text-center mt-8 sm:mt-12">
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 px-4">
             All registrations include a 1-year minimum term. Renewals at the same rate.
           </p>
         </div>
