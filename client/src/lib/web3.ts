@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { TNS_RESOLVER_ADDRESS, TNS_CONTROLLER_ADDRESS, USE_NEW_CONTRACTS } from "./contracts";
+import { TNS_RESOLVER_ADDRESS, TNS_CONTROLLER_ADDRESS } from "./contracts";
 
 export interface NetworkConfig {
   chainId: number;
@@ -968,141 +968,74 @@ export class Web3Service {
       try {
         // For ENS-forked contracts, count domains from BOTH Controller AND BaseRegistrar
         // Controller events = new registrations, BaseRegistrar events = migrations
-        if (USE_NEW_CONTRACTS) {
-          const currentBlock = await provider.getBlockNumber();
-          const fromBlock = Math.max(0, currentBlock - 1000000);
-          
-          // Query Controller NameRegistered events (new registrations)
-          const controllerContract = new ethers.Contract(
-            TNS_CONTROLLER_ADDRESS,
-            ["event NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires)"],
-            provider
-          );
-          
-          // Query BaseRegistrar NameRegistered events (includes migrations)
-          const baseRegistrarContract = new ethers.Contract(
-            "0xc08c5b051a9cFbcd81584Ebb8870ed77eFc5E676",
-            ["event NameRegistered(uint256 indexed id, address indexed owner, uint256 expires)", "function ownerOf(uint256) view returns (address)"],
-            provider
-          );
-          
-          const uniqueTokenIds = new Set<string>();
-          const uniqueOwners = new Set<string>();
-          
-          try {
-            // Get Controller events (for domain names on new registrations)
-            const controllerFilter = controllerContract.filters.NameRegistered();
-            const controllerEvents = await controllerContract.queryFilter(controllerFilter, fromBlock, currentBlock);
-            
-            for (const event of controllerEvents) {
-              const args = (event as any).args;
-              if (args && args.label) {
-                const tokenId = ethers.getBigInt(args.label).toString();
-                uniqueTokenIds.add(tokenId);
-                if (args.owner) {
-                  uniqueOwners.add(args.owner.toLowerCase());
-                }
-              }
-            }
-            
-            // Get BaseRegistrar events (for migrated domains)
-            const registrarFilter = baseRegistrarContract.filters.NameRegistered();
-            const registrarEvents = await baseRegistrarContract.queryFilter(registrarFilter, fromBlock, currentBlock);
-            
-            for (const event of registrarEvents) {
-              const args = (event as any).args;
-              if (args && args.id) {
-                const tokenId = args.id.toString();
-                if (!uniqueTokenIds.has(tokenId)) {
-                  // Verify domain is still owned (not burned)
-                  try {
-                    const owner = await baseRegistrarContract.ownerOf(args.id);
-                    if (owner !== ethers.ZeroAddress) {
-                      uniqueTokenIds.add(tokenId);
-                      uniqueOwners.add(owner.toLowerCase());
-                    }
-                  } catch {
-                    // Domain was burned
-                  }
-                }
-              }
-            }
-          } catch (e) {
-            console.log("Error querying domain events:", e);
-          }
-          
-          totalDomains = uniqueTokenIds.size;
-          activeUsers = uniqueOwners.size;
-          
-          console.log(`ENS contract stats: ${totalDomains} domains (including migrations), ${activeUsers} users`);
-          
-          return {
-            totalDomains,
-            totalValueLocked,
-            activeUsers,
-          };
-        }
-        
-        // Legacy contract path
-        const contract = new ethers.Contract(contractAddress, abi, provider);
         const currentBlock = await provider.getBlockNumber();
+        const fromBlock = Math.max(0, currentBlock - 1000000);
         
-        // Query DomainRegistered events from contract deployment to get total count
-        const filter = contract.filters.DomainRegistered();
+        // Query Controller NameRegistered events (new registrations)
+        const controllerContract = new ethers.Contract(
+          TNS_CONTROLLER_ADDRESS,
+          ["event NameRegistered(string name, bytes32 indexed label, address indexed owner, uint256 baseCost, uint256 premium, uint256 expires)"],
+          provider
+        );
         
-        // Query in chunks to avoid timeouts
-        const blockRange = 250000; // Query 250k blocks at a time for efficiency
-        const maxLookback = 10000000; // Maximum 10M blocks to look back to capture full history
-        let allEvents: any[] = [];
+        // Query BaseRegistrar NameRegistered events (includes migrations)
+        const baseRegistrarContract = new ethers.Contract(
+          "0xc08c5b051a9cFbcd81584Ebb8870ed77eFc5E676",
+          ["event NameRegistered(uint256 indexed id, address indexed owner, uint256 expires)", "function ownerOf(uint256) view returns (address)"],
+          provider
+        );
         
-        for (let lookback = 0; lookback < maxLookback; lookback += blockRange) {
-          try {
-            const fromBlock = Math.max(0, currentBlock - lookback - blockRange);
-            const toBlock = Math.max(0, currentBlock - lookback);
-            
-            // Stop if we've already covered block 0
-            if (toBlock <= 0 && fromBlock === 0) {
-              console.log(`Reached block 0, stopping search. Total events found: ${allEvents.length}`);
-              break;
+        const uniqueTokenIds = new Set<string>();
+        const uniqueOwners = new Set<string>();
+        
+        try {
+          // Get Controller events (for domain names on new registrations)
+          const controllerFilter = controllerContract.filters.NameRegistered();
+          const controllerEvents = await controllerContract.queryFilter(controllerFilter, fromBlock, currentBlock);
+          
+          for (const event of controllerEvents) {
+            const args = (event as any).args;
+            if (args && args.label) {
+              const tokenId = ethers.getBigInt(args.label).toString();
+              uniqueTokenIds.add(tokenId);
+              if (args.owner) {
+                uniqueOwners.add(args.owner.toLowerCase());
+              }
             }
-            
-            console.log(`Querying blocks ${fromBlock} to ${toBlock} for domain events...`);
-            const events = await contract.queryFilter(filter, fromBlock, toBlock);
-            
-            if (events.length > 0) {
-              allEvents = [...allEvents, ...events];
-              console.log(`Found ${events.length} events in this range, total so far: ${allEvents.length}`);
-            }
-            
-            // If we get fewer than 25 events in a range and we've gone back far enough, stop
-            if (events.length < 25 && lookback > blockRange * 5) {
-              console.log(`Low event count, stopping search. Total events found: ${allEvents.length}`);
-              break;
-            }
-          } catch (chunkError) {
-            console.log(`Error querying blocks in range:`, chunkError);
-            break;
           }
+          
+          // Get BaseRegistrar events (for migrated domains)
+          const registrarFilter = baseRegistrarContract.filters.NameRegistered();
+          const registrarEvents = await baseRegistrarContract.queryFilter(registrarFilter, fromBlock, currentBlock);
+          
+          for (const event of registrarEvents) {
+            const args = (event as any).args;
+            if (args && args.id) {
+              const tokenId = args.id.toString();
+              if (!uniqueTokenIds.has(tokenId)) {
+                // Verify domain is still owned (not burned)
+                try {
+                  const owner = await baseRegistrarContract.ownerOf(args.id);
+                  if (owner !== ethers.ZeroAddress) {
+                    uniqueTokenIds.add(tokenId);
+                    uniqueOwners.add(owner.toLowerCase());
+                  }
+                } catch {
+                  // Domain was burned
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.log("Error querying domain events:", e);
         }
         
-        // Use event count for total domains since we have reliable data
-        totalDomains = allEvents.length;
-        console.log("Using real blockchain data for total domains:", totalDomains);
-        
-        // Count unique domain owners for active users
-        const uniqueOwners = new Set();
-        allEvents.forEach(event => {
-          if (event.args && event.args.owner) {
-            uniqueOwners.add(event.args.owner.toLowerCase());
-          }
-        });
+        totalDomains = uniqueTokenIds.size;
         activeUsers = uniqueOwners.size;
         
-        console.log(`Real blockchain data: ${totalDomains} total domains, ${activeUsers} unique users from ${allEvents.length} events`);
-        
+        console.log(`ENS contract stats: ${totalDomains} domains (including migrations), ${activeUsers} users`);
       } catch (eventError) {
-        console.log("Could not query blockchain events comprehensively:", eventError);
-        // Return zeros if we can't get real data - no fake estimates
+        console.log("Could not query blockchain events:", eventError);
         totalDomains = 0;
         activeUsers = 0;
       }

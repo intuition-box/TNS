@@ -30,7 +30,7 @@ import { DomainCard } from "@/components/domain-card";
 import { useWallet } from "@/hooks/use-wallet";
 import { Link } from "wouter";
 import { web3Service } from "@/lib/web3";
-import { TNS_BASE_REGISTRAR_ADDRESS, LEGACY_REGISTRY_ADDRESS, LEGACY_REGISTRY_ABI } from "@/lib/contracts";
+import { TNS_BASE_REGISTRAR_ADDRESS } from "@/lib/contracts";
 import type { DomainWithRecords } from "@shared/schema";
 
 type ViewMode = "grid" | "list";
@@ -75,16 +75,12 @@ export default function ManagePage() {
       // Fallback: Query ENS BaseRegistrar for on-chain verification
       try {
         const ensDomains = await web3Service.getOwnerDomainsENS(TNS_BASE_REGISTRAR_ADDRESS, address);
-        if (ensDomains.length > 0) {
-          console.log("Got domains from ENS registrar:", ensDomains.length);
-          return ensDomains;
-        }
+        console.log("Got domains from ENS registrar:", ensDomains.length);
+        return ensDomains;
       } catch (e) {
-        console.log("ENS registrar fallback to legacy");
+        console.log("Error getting domains from ENS registrar:", e);
+        return [];
       }
-      
-      // Last resort: Legacy contract (for migration verification)
-      return await web3Service.getOwnerDomains(LEGACY_REGISTRY_ADDRESS, LEGACY_REGISTRY_ABI, address);
     },
     enabled: isConnected && isCorrectNetwork && !!address,
     refetchOnWindowFocus: false,
