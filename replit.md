@@ -66,11 +66,6 @@ The smart contracts have been refactored to fork the battle-tested ENS (Ethereum
 - **PaymentForwarder**: `0xB0e22123Ac142e57F56Bc9fEf2077bB2Fa1141a0`
 - **Treasury**: `0x629A5386F73283F80847154d16E359192a891f86`
 
-#### Legacy Contracts (Deprecated)
-- **TNSRegistryERC721**: `0x7C365AF9034b00dadc616dE7f38221C678D423Fa`
-- **TNSResolver**: `0x490a0B0EAD6B1da1C7810ACBc9574D7429880F06`
-- **PaymentForwarder**: `0x640E4fD39A2f7f65BBB344988eFF7470A98E2547`
-
 #### Deployment & Migration
 - Deployment script: `contracts/tns-ens/scripts/deploy.ts`
 - Migration script: `contracts/tns-ens/scripts/migrate-with-names.ts`

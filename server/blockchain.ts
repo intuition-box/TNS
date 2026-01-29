@@ -16,26 +16,10 @@ const TNS_PRICE_ORACLE_ADDRESS = "0xeFD11f62A66F39fE5C2A7e43f281FAbaFceed303";
 const TNS_PAYMENT_FORWARDER_ADDRESS_NEW = "0xB0e22123Ac142e57F56Bc9fEf2077bB2Fa1141a0";
 const TRUST_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000"; // Native token (like ETH)
 
-// Use new ENS-forked contracts
-const USE_NEW_CONTRACTS = true;
-
-// Legacy contract addresses (still active until migration)
-const TNS_REGISTRY_ADDRESS = "0x7C365AF9034b00dadc616dE7f38221C678D423Fa";
-
 // Intuition EthMultiVault (Knowledge Graph) for creating atoms
 // Proxy contract (TransparentUpgradeableProxy) on Intuition mainnet (Chain ID: 1155)
 export const INTUITION_MULTIVAULT_ADDRESS = "0x6E35cF57A41fA15eA0EaE9C33e751b01A784Fe7e";
 // Implementation (MultiVault): 0xc6f28A5fFe30eee3fadE5080B8930C58187F4903
-
-// Minimal ABI for reading domain data (legacy contract)
-const TNS_REGISTRY_ABI = [
-  "function tokenIdToDomain(uint256) view returns (string)",
-  "function getDomainInfo(string) view returns (address owner, uint256 tokenId, uint256 expirationTime, bool exists)",
-  "function domains(string) view returns (string name, uint256 expirationTime, bool exists)",
-  "function isAvailable(string) view returns (bool)",
-  "function totalSupply() view returns (uint256)",
-  "function ownerOf(uint256) view returns (address)"
-];
 
 // ENS-forked contract ABIs
 const TNS_REGISTRY_ABI_NEW = [
@@ -104,26 +88,18 @@ export const INTUITION_MULTIVAULT_ABI = [
 
 export class BlockchainService {
   private provider: ethers.JsonRpcProvider;
-  private contract: ethers.Contract; // Legacy registry
   private multivaultContract: ethers.Contract;
   
-  // ENS-forked contracts (initialized if USE_NEW_CONTRACTS is true)
-  private registryNew: ethers.Contract | null = null;
-  private baseRegistrar: ethers.Contract | null = null;
-  private controller: ethers.Contract | null = null;
-  private resolverNew: ethers.Contract | null = null;
-  private reverseRegistrar: ethers.Contract | null = null;
-  private priceOracle: ethers.Contract | null = null;
+  // ENS-forked contracts
+  private registry: ethers.Contract;
+  private baseRegistrar: ethers.Contract;
+  private controller: ethers.Contract;
+  private resolver: ethers.Contract;
+  private reverseRegistrar: ethers.Contract;
+  private priceOracle: ethers.Contract;
 
   constructor() {
     this.provider = new ethers.JsonRpcProvider(RPC_URL);
-    
-    // Legacy contract (always initialized for backward compatibility)
-    this.contract = new ethers.Contract(
-      TNS_REGISTRY_ADDRESS,
-      TNS_REGISTRY_ABI,
-      this.provider
-    );
     
     this.multivaultContract = new ethers.Contract(
       INTUITION_MULTIVAULT_ADDRESS,
@@ -131,15 +107,13 @@ export class BlockchainService {
       this.provider
     );
 
-    // Initialize ENS-forked contracts if enabled
-    if (USE_NEW_CONTRACTS) {
-      this.registryNew = new ethers.Contract(TNS_REGISTRY_ADDRESS_NEW, TNS_REGISTRY_ABI_NEW, this.provider);
-      this.baseRegistrar = new ethers.Contract(TNS_BASE_REGISTRAR_ADDRESS, TNS_BASE_REGISTRAR_ABI, this.provider);
-      this.controller = new ethers.Contract(TNS_CONTROLLER_ADDRESS, TNS_CONTROLLER_ABI, this.provider);
-      this.resolverNew = new ethers.Contract(TNS_RESOLVER_ADDRESS_NEW, TNS_RESOLVER_ABI_NEW, this.provider);
-      this.reverseRegistrar = new ethers.Contract(TNS_REVERSE_REGISTRAR_ADDRESS, TNS_REVERSE_REGISTRAR_ABI, this.provider);
-      this.priceOracle = new ethers.Contract(TNS_PRICE_ORACLE_ADDRESS, TNS_PRICE_ORACLE_ABI, this.provider);
-    }
+    // Initialize ENS-forked contracts
+    this.registry = new ethers.Contract(TNS_REGISTRY_ADDRESS_NEW, TNS_REGISTRY_ABI_NEW, this.provider);
+    this.baseRegistrar = new ethers.Contract(TNS_BASE_REGISTRAR_ADDRESS, TNS_BASE_REGISTRAR_ABI, this.provider);
+    this.controller = new ethers.Contract(TNS_CONTROLLER_ADDRESS, TNS_CONTROLLER_ABI, this.provider);
+    this.resolver = new ethers.Contract(TNS_RESOLVER_ADDRESS_NEW, TNS_RESOLVER_ABI_NEW, this.provider);
+    this.reverseRegistrar = new ethers.Contract(TNS_REVERSE_REGISTRAR_ADDRESS, TNS_REVERSE_REGISTRAR_ABI, this.provider);
+    this.priceOracle = new ethers.Contract(TNS_PRICE_ORACLE_ADDRESS, TNS_PRICE_ORACLE_ABI, this.provider);
   }
 
   /**
@@ -205,19 +179,19 @@ export class BlockchainService {
   }
 
   /**
-   * Check if using new ENS-forked contracts
-   */
-  public isUsingNewContracts(): boolean {
-    return USE_NEW_CONTRACTS;
-  }
-
-  /**
-   * Get domain name from token ID
+   * Get domain name from token ID using migration data
    */
   async getDomainNameByTokenId(tokenId: number): Promise<string | null> {
     try {
-      const domainName = await this.contract.tokenIdToDomain(tokenId);
-      return domainName || null;
+      const migrationData = await this.loadMigrationData();
+      const tokenIdStr = tokenId.toString();
+      
+      // Check migration data first
+      if (migrationData.has(tokenIdStr)) {
+        return migrationData.get(tokenIdStr) || null;
+      }
+      
+      return null;
     } catch (error) {
       console.error(`Error getting domain name for token ${tokenId}:`, error);
       return null;
@@ -225,30 +199,7 @@ export class BlockchainService {
   }
 
   /**
-   * Get complete domain information from blockchain
-   */
-  async getDomainInfo(domainName: string): Promise<{
-    owner: string;
-    tokenId: bigint;
-    expirationTime: bigint;
-    exists: boolean;
-  } | null> {
-    try {
-      const [owner, tokenId, expirationTime, exists] = await this.contract.getDomainInfo(domainName);
-      return {
-        owner,
-        tokenId,
-        expirationTime,
-        exists
-      };
-    } catch (error) {
-      console.error(`Error getting domain info for ${domainName}:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Get domain info from ENS-forked BaseRegistrar (works for migrated domains)
+   * Get domain info from ENS-forked BaseRegistrar
    */
   async getDomainInfoENS(domainName: string): Promise<{
     owner: string;
@@ -257,10 +208,6 @@ export class BlockchainService {
     exists: boolean;
   } | null> {
     try {
-      if (!USE_NEW_CONTRACTS || !this.baseRegistrar) {
-        return this.getDomainInfo(domainName);
-      }
-
       const cleanName = domainName.replace(/\.trust$/, '');
       const labelHash = this.labelhash(cleanName);
       const tokenId = ethers.getBigInt(labelHash);
@@ -274,11 +221,6 @@ export class BlockchainService {
       // Domain exists if owner is not zero address
       const exists = owner !== ethers.ZeroAddress;
       
-      if (!exists) {
-        // Fall back to legacy contract
-        return this.getDomainInfo(cleanName);
-      }
-      
       return {
         owner,
         tokenId,
@@ -287,8 +229,7 @@ export class BlockchainService {
       };
     } catch (error) {
       console.error(`Error getting ENS domain info for ${domainName}:`, error);
-      // Fall back to legacy
-      return this.getDomainInfo(domainName.replace(/\.trust$/, ''));
+      return null;
     }
   }
 
@@ -311,7 +252,7 @@ export class BlockchainService {
       }
 
       // Then get the full domain info
-      const domainInfo = await this.getDomainInfo(domainName);
+      const domainInfo = await this.getDomainInfoENS(domainName);
       
       if (!domainInfo || !domainInfo.exists) {
         console.log(`Domain ${domainName} does not exist`);
@@ -335,14 +276,7 @@ export class BlockchainService {
    */
   async isAvailable(domainName: string): Promise<boolean> {
     try {
-      // Use new contracts if enabled
-      if (USE_NEW_CONTRACTS && this.controller) {
-        const available = await this.controller.available(domainName);
-        return available;
-      }
-      
-      // Fall back to legacy contract
-      const available = await this.contract.isAvailable(domainName);
+      const available = await this.controller.available(domainName);
       return available;
     } catch (error) {
       console.error(`Error checking availability for ${domainName}:`, error);
@@ -355,23 +289,8 @@ export class BlockchainService {
    */
   async getRentPrice(domainName: string, durationSeconds: number): Promise<bigint> {
     try {
-      if (USE_NEW_CONTRACTS && this.controller) {
-        const price = await this.controller.rentPrice(domainName, durationSeconds);
-        return price;
-      }
-      
-      // For legacy, calculate based on character length
-      const length = domainName.length;
-      const yearsFromSeconds = Math.ceil(durationSeconds / (365 * 24 * 60 * 60));
-      let pricePerYear: bigint;
-      if (length === 3) {
-        pricePerYear = ethers.parseEther("100");
-      } else if (length === 4) {
-        pricePerYear = ethers.parseEther("70");
-      } else {
-        pricePerYear = ethers.parseEther("30");
-      }
-      return pricePerYear * BigInt(yearsFromSeconds);
+      const price = await this.controller.rentPrice(domainName, durationSeconds);
+      return price;
     } catch (error) {
       console.error(`Error getting rent price for ${domainName}:`, error);
       return BigInt(0);
@@ -383,15 +302,9 @@ export class BlockchainService {
    */
   async getDomainOwnerENS(domainName: string): Promise<string | null> {
     try {
-      if (!USE_NEW_CONTRACTS || !this.registryNew) {
-        // Fall back to legacy
-        const info = await this.getDomainInfo(domainName);
-        return info?.owner || null;
-      }
-
       const fullName = domainName.endsWith('.trust') ? domainName : `${domainName}.trust`;
       const node = this.namehash(fullName);
-      const owner = await this.registryNew.owner(node);
+      const owner = await this.registry.owner(node);
       return owner === ethers.ZeroAddress ? null : owner;
     } catch (error) {
       console.error(`Error getting domain owner for ${domainName}:`, error);
@@ -404,13 +317,9 @@ export class BlockchainService {
    */
   async getResolvedAddress(domainName: string): Promise<string | null> {
     try {
-      if (!USE_NEW_CONTRACTS || !this.resolverNew) {
-        return null;
-      }
-
       const fullName = domainName.endsWith('.trust') ? domainName : `${domainName}.trust`;
       const node = this.namehash(fullName);
-      const addr = await this.resolverNew.addr(node);
+      const addr = await this.resolver.addr(node);
       return addr === ethers.ZeroAddress ? null : addr;
     } catch (error) {
       console.error(`Error getting resolved address for ${domainName}:`, error);
@@ -423,12 +332,8 @@ export class BlockchainService {
    */
   async getReverseName(address: string): Promise<string | null> {
     try {
-      if (!USE_NEW_CONTRACTS || !this.reverseRegistrar || !this.resolverNew) {
-        return null;
-      }
-
       const reverseNode = await this.reverseRegistrar.node(address);
-      const name = await this.resolverNew.name(reverseNode);
+      const name = await this.resolver.name(reverseNode);
       return name || null;
     } catch (error) {
       console.error(`Error getting reverse name for ${address}:`, error);
@@ -441,20 +346,10 @@ export class BlockchainService {
    */
   async getDomainExpiration(domainName: string): Promise<Date | null> {
     try {
-      if (USE_NEW_CONTRACTS && this.baseRegistrar) {
-        const labelHash = this.labelhash(domainName);
-        // Convert hex string to BigInt properly using ethers
-        const tokenId = ethers.getBigInt(labelHash);
-        const expires = await this.baseRegistrar.nameExpires(tokenId);
-        return new Date(Number(expires) * 1000);
-      }
-      
-      // Fall back to legacy
-      const info = await this.getDomainInfo(domainName);
-      if (info && info.exists) {
-        return new Date(Number(info.expirationTime) * 1000);
-      }
-      return null;
+      const labelHash = this.labelhash(domainName);
+      const tokenId = ethers.getBigInt(labelHash);
+      const expires = await this.baseRegistrar.nameExpires(tokenId);
+      return new Date(Number(expires) * 1000);
     } catch (error) {
       console.error(`Error getting domain expiration for ${domainName}:`, error);
       return null;
@@ -466,13 +361,9 @@ export class BlockchainService {
    */
   async getTextRecord(domainName: string, key: string): Promise<string | null> {
     try {
-      if (!USE_NEW_CONTRACTS || !this.resolverNew) {
-        return null;
-      }
-
       const fullName = domainName.endsWith('.trust') ? domainName : `${domainName}.trust`;
       const node = this.namehash(fullName);
-      const value = await this.resolverNew.text(node, key);
+      const value = await this.resolver.text(node, key);
       return value || null;
     } catch (error) {
       console.error(`Error getting text record ${key} for ${domainName}:`, error);
@@ -481,12 +372,16 @@ export class BlockchainService {
   }
 
   /**
-   * Get total supply of registered domain NFTs
+   * Get total supply of registered domain NFTs (from event scanning)
    */
   async getTotalSupply(): Promise<number> {
     try {
-      const totalSupply = await this.contract.totalSupply();
-      return Number(totalSupply);
+      // Scan domains to get count - ENS contracts don't have totalSupply
+      const currentBlock = await this.provider.getBlockNumber();
+      const fromBlock = Math.max(0, currentBlock - 1000000);
+      const transferFilter = this.baseRegistrar.filters.Transfer();
+      const transferEvents = await this.baseRegistrar.queryFilter(transferFilter, fromBlock, currentBlock);
+      return transferEvents.length;
     } catch (error) {
       console.error('Error getting total supply:', error);
       return 0;
@@ -511,120 +406,96 @@ export class BlockchainService {
     }> = [];
 
     try {
-      // Use ENS-style event scanning if new contracts are enabled
-      if (USE_NEW_CONTRACTS && this.controller && this.baseRegistrar) {
-        console.log("Scanning domains from ENS-forked contracts...");
-        
-        const currentBlock = await this.provider.getBlockNumber();
-        const fromBlock = Math.max(0, currentBlock - 1000000); // Look back 1M blocks
-        
-        const seenDomains = new Set<string>();
-        const seenTokenIds = new Set<string>();
-        
-        // Query NameRegistered events from Controller (domains registered via controller)
-        const controllerFilter = this.controller.filters.NameRegistered();
-        const controllerEvents = await this.controller.queryFilter(controllerFilter, fromBlock, currentBlock);
-        console.log(`Found ${controllerEvents.length} NameRegistered events from Controller`);
-        
-        for (const event of controllerEvents) {
-          const args = (event as any).args;
-          if (args && args.name) {
-            const domainName = args.name as string;
-            if (seenDomains.has(domainName)) continue;
-            seenDomains.add(domainName);
+      // Use ENS-style event scanning
+      console.log("Scanning domains from ENS-forked contracts...");
+      
+      const currentBlock = await this.provider.getBlockNumber();
+      const fromBlock = Math.max(0, currentBlock - 1000000); // Look back 1M blocks
+      
+      const seenDomains = new Set<string>();
+      const seenTokenIds = new Set<string>();
+      
+      // Query NameRegistered events from Controller (domains registered via controller)
+      const controllerFilter = this.controller.filters.NameRegistered();
+      const controllerEvents = await this.controller.queryFilter(controllerFilter, fromBlock, currentBlock);
+      console.log(`Found ${controllerEvents.length} NameRegistered events from Controller`);
+      
+      for (const event of controllerEvents) {
+        const args = (event as any).args;
+        if (args && args.name) {
+          const domainName = args.name as string;
+          if (seenDomains.has(domainName)) continue;
+          seenDomains.add(domainName);
+          
+          try {
+            const labelHash = this.labelhash(domainName);
+            const tokenId = ethers.getBigInt(labelHash);
+            seenTokenIds.add(tokenId.toString());
             
-            try {
-              const labelHash = this.labelhash(domainName);
-              const tokenId = ethers.getBigInt(labelHash);
-              seenTokenIds.add(tokenId.toString());
+            const [owner, expires] = await Promise.all([
+              this.baseRegistrar.ownerOf(tokenId).catch(() => ethers.ZeroAddress),
+              this.baseRegistrar.nameExpires(tokenId).catch(() => BigInt(0))
+            ]);
+            
+            if (owner !== ethers.ZeroAddress) {
+              domains.push({
+                name: domainName,
+                owner: owner,
+                expirationTime: new Date(Number(expires) * 1000),
+                tokenId: tokenId.toString()
+              });
+            }
+          } catch (error) {
+            console.error(`Error getting domain info for ${domainName}:`, error);
+          }
+        }
+      }
+      
+      // Also scan BaseRegistrar Transfer events for migrated domains
+      // Migrated domains were imported directly without going through Controller
+      const transferFilter = this.baseRegistrar.filters.Transfer();
+      const transferEvents = await this.baseRegistrar.queryFilter(transferFilter, fromBlock, currentBlock);
+      console.log(`Found ${transferEvents.length} Transfer events from BaseRegistrar`);
+      
+      // Load migration data to map tokenIds to names for migrated domains
+      const migrationData = await this.loadMigrationData();
+      
+      for (const event of transferEvents) {
+        const args = (event as any).args;
+        if (args && args.tokenId) {
+          const tokenId = args.tokenId.toString();
+          
+          // Skip if we already have this domain from Controller events
+          if (seenTokenIds.has(tokenId)) continue;
+          seenTokenIds.add(tokenId);
+          
+          try {
+            const [owner, expires] = await Promise.all([
+              this.baseRegistrar.ownerOf(args.tokenId).catch(() => ethers.ZeroAddress),
+              this.baseRegistrar.nameExpires(args.tokenId).catch(() => BigInt(0))
+            ]);
+            
+            if (owner !== ethers.ZeroAddress) {
+              // Look up domain name from migration data
+              const domainName = migrationData.get(tokenId);
               
-              const [owner, expires] = await Promise.all([
-                this.baseRegistrar!.ownerOf(tokenId).catch(() => ethers.ZeroAddress),
-                this.baseRegistrar!.nameExpires(tokenId).catch(() => BigInt(0))
-              ]);
-              
-              if (owner !== ethers.ZeroAddress) {
+              if (domainName && !seenDomains.has(domainName)) {
+                seenDomains.add(domainName);
                 domains.push({
                   name: domainName,
                   owner: owner,
                   expirationTime: new Date(Number(expires) * 1000),
-                  tokenId: tokenId.toString()
+                  tokenId: tokenId
                 });
               }
-            } catch (error) {
-              console.error(`Error getting domain info for ${domainName}:`, error);
             }
+          } catch (error) {
+            console.error(`Error getting domain info for tokenId ${tokenId}:`, error);
           }
         }
-        
-        // Also scan BaseRegistrar Transfer events for migrated domains
-        // Migrated domains were imported directly without going through Controller
-        const transferFilter = this.baseRegistrar.filters.Transfer();
-        const transferEvents = await this.baseRegistrar.queryFilter(transferFilter, fromBlock, currentBlock);
-        console.log(`Found ${transferEvents.length} Transfer events from BaseRegistrar`);
-        
-        // Load migration data to map tokenIds to names for migrated domains
-        const migrationData = await this.loadMigrationData();
-        
-        for (const event of transferEvents) {
-          const args = (event as any).args;
-          if (args && args.tokenId) {
-            const tokenId = args.tokenId.toString();
-            
-            // Skip if we already have this domain from Controller events
-            if (seenTokenIds.has(tokenId)) continue;
-            seenTokenIds.add(tokenId);
-            
-            try {
-              const [owner, expires] = await Promise.all([
-                this.baseRegistrar!.ownerOf(args.tokenId).catch(() => ethers.ZeroAddress),
-                this.baseRegistrar!.nameExpires(args.tokenId).catch(() => BigInt(0))
-              ]);
-              
-              if (owner !== ethers.ZeroAddress) {
-                // Look up domain name from migration data
-                const domainName = migrationData.get(tokenId);
-                
-                if (domainName && !seenDomains.has(domainName)) {
-                  seenDomains.add(domainName);
-                  domains.push({
-                    name: domainName,
-                    owner: owner,
-                    expirationTime: new Date(Number(expires) * 1000),
-                    tokenId: tokenId
-                  });
-                }
-              }
-            } catch (error) {
-              console.error(`Error getting domain info for tokenId ${tokenId}:`, error);
-            }
-          }
-        }
-        
-        console.log(`Found ${domains.length} valid domains from ENS contracts`);
-        return domains;
       }
       
-      // Fall back to legacy contract scanning
-      const totalSupply = await this.getTotalSupply();
-      console.log(`Scanning ${totalSupply} registered domains from legacy contract...`);
-
-      for (let tokenId = 1; tokenId <= totalSupply; tokenId++) {
-        if (onProgress) {
-          onProgress(tokenId, totalSupply);
-        }
-
-        try {
-          const domain = await this.getDomainByTokenId(tokenId);
-          if (domain) {
-            domains.push(domain);
-          }
-        } catch (error) {
-          console.error(`Error scanning token ${tokenId}:`, error);
-        }
-      }
-
-      console.log(`Found ${domains.length} valid domains`);
+      console.log(`Found ${domains.length} valid domains from ENS contracts`);
       return domains;
     } catch (error) {
       console.error('Error scanning domains:', error);

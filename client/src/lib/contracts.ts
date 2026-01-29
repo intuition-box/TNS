@@ -15,13 +15,6 @@ export const TNS_PAYMENT_FORWARDER_ADDRESS = "0xB0e22123Ac142e57F56Bc9fEf2077bB2
 // TRUST is the native token on Intuition (like ETH on Ethereum) - no ERC-20 address needed
 export const TRUST_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000"; // Native token
 
-// Legacy contract addresses (deprecated - kept for reference)
-export const LEGACY_REGISTRY_ADDRESS = "0x7C365AF9034b00dadc616dE7f38221C678D423Fa";
-export const LEGACY_RESOLVER_ADDRESS = "0x490a0B0EAD6B1da1C7810ACBc9574D7429880F06";
-export const LEGACY_PAYMENT_FORWARDER_ADDRESS = "0x640E4fD39A2f7f65BBB344988eFF7470A98E2547";
-
-// Use new ENS-forked contracts
-export const USE_NEW_CONTRACTS = true;
 
 // ============================================
 // TRUST ERC-20 TOKEN ABI (for approvals)
@@ -574,104 +567,6 @@ export const TNS_PAYMENT_FORWARDER_ABI = [
 ];
 
 // ============================================
-// LEGACY CONTRACT ABIs (for backward compatibility)
-// ============================================
-export const LEGACY_REGISTRY_ABI = [
-  {
-    inputs: [{ name: "commitment", type: "bytes32" }],
-    name: "makeCommitment",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function"
-  },
-  {
-    inputs: [
-      { name: "domain", type: "string" },
-      { name: "duration", type: "uint256" },
-      { name: "secret", type: "bytes32" }
-    ],
-    name: "register",
-    outputs: [],
-    stateMutability: "payable",
-    type: "function"
-  },
-  {
-    inputs: [
-      { name: "domain", type: "string" },
-      { name: "duration", type: "uint256" }
-    ],
-    name: "calculateCost",
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "pure",
-    type: "function"
-  },
-  {
-    inputs: [{ name: "domain", type: "string" }],
-    name: "isAvailable",
-    outputs: [{ name: "", type: "bool" }],
-    stateMutability: "view",
-    type: "function"
-  },
-  {
-    inputs: [{ name: "domain", type: "string" }],
-    name: "getDomainInfo",
-    outputs: [
-      { name: "domainOwner", type: "address" },
-      { name: "tokenId", type: "uint256" },
-      { name: "expirationTime", type: "uint256" },
-      { name: "exists", type: "bool" }
-    ],
-    stateMutability: "view",
-    type: "function"
-  },
-  {
-    inputs: [{ name: "domainOwner", type: "address" }],
-    name: "getOwnerDomains",
-    outputs: [{ name: "", type: "string[]" }],
-    stateMutability: "view",
-    type: "function"
-  },
-  {
-    inputs: [],
-    name: "totalSupply",
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-    type: "function"
-  },
-  {
-    inputs: [{ name: "tokenId", type: "uint256" }],
-    name: "ownerOf",
-    outputs: [{ name: "", type: "address" }],
-    stateMutability: "view",
-    type: "function"
-  },
-  {
-    inputs: [
-      { name: "domain", type: "string" },
-      { name: "duration", type: "uint256" }
-    ],
-    name: "renew",
-    outputs: [],
-    stateMutability: "payable",
-    type: "function"
-  },
-  {
-    inputs: [{ name: "domain", type: "string" }],
-    name: "setPrimaryDomain",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function"
-  },
-  {
-    inputs: [{ name: "owner", type: "address" }],
-    name: "getPrimaryDomain",
-    outputs: [{ name: "", type: "string" }],
-    stateMutability: "view",
-    type: "function"
-  }
-];
-
-// ============================================
 // UTILITY FUNCTIONS
 // ============================================
 
@@ -714,24 +609,17 @@ export function labelhash(label: string): string {
 }
 
 /**
- * Get the active contract addresses based on USE_NEW_CONTRACTS flag
+ * Get the active contract addresses
  */
 export function getActiveContracts() {
-  if (USE_NEW_CONTRACTS) {
-    return {
-      registry: TNS_REGISTRY_ADDRESS,
-      registrar: TNS_BASE_REGISTRAR_ADDRESS,
-      controller: TNS_CONTROLLER_ADDRESS,
-      resolver: TNS_RESOLVER_ADDRESS,
-      reverseRegistrar: TNS_REVERSE_REGISTRAR_ADDRESS,
-      priceOracle: TNS_PRICE_ORACLE_ADDRESS,
-      paymentForwarder: TNS_PAYMENT_FORWARDER_ADDRESS,
-      trustToken: TRUST_TOKEN_ADDRESS,
-    };
-  }
   return {
-    registry: LEGACY_REGISTRY_ADDRESS,
-    resolver: LEGACY_RESOLVER_ADDRESS,
-    paymentForwarder: LEGACY_PAYMENT_FORWARDER_ADDRESS,
+    registry: TNS_REGISTRY_ADDRESS,
+    registrar: TNS_BASE_REGISTRAR_ADDRESS,
+    controller: TNS_CONTROLLER_ADDRESS,
+    resolver: TNS_RESOLVER_ADDRESS,
+    reverseRegistrar: TNS_REVERSE_REGISTRAR_ADDRESS,
+    priceOracle: TNS_PRICE_ORACLE_ADDRESS,
+    paymentForwarder: TNS_PAYMENT_FORWARDER_ADDRESS,
+    trustToken: TRUST_TOKEN_ADDRESS,
   };
 }
