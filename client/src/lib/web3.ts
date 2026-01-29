@@ -1109,7 +1109,8 @@ export class Web3Service {
       const registrarContract = new ethers.Contract(baseRegistrarAddress, registrarAbi, provider);
       
       const currentBlock = await provider.getBlockNumber();
-      const fromBlock = Math.max(0, currentBlock - 1000000); // Look back 1M blocks
+      const fromBlock = 0; // Search all blocks from genesis
+      console.log("Searching blocks from", fromBlock, "to", currentBlock);
       
       const domains: any[] = [];
       const seenTokenIds = new Set<string>();
@@ -1225,15 +1226,36 @@ export class Web3Service {
       
       // 3. Get domains from Transfer events (for migrated domains that may not have NameRegistered events)
       try {
-        const transferFilter = registrarContract.filters.Transfer(null, ownerAddress);
-        const transferEvents = await registrarContract.queryFilter(transferFilter, fromBlock, currentBlock);
+        // Use direct RPC call for more reliable event filtering
+        const paddedAddress = "0x" + ownerAddress.slice(2).toLowerCase().padStart(64, '0');
+        const transferTopic = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
         
-        console.log("Found", transferEvents.length, "Transfer events to owner");
+        const rpcResponse = await fetch("https://intuition.calderachain.xyz", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            method: "eth_getLogs",
+            params: [{
+              fromBlock: "0x0",
+              toBlock: "latest",
+              address: baseRegistrarAddress,
+              topics: [transferTopic, null, paddedAddress]
+            }],
+            id: 1
+          })
+        });
+        
+        const rpcData = await rpcResponse.json();
+        const transferEvents = rpcData.result || [];
+        
+        console.log("Found", transferEvents.length, "Transfer events to owner (via RPC)");
         
         for (const event of transferEvents) {
           try {
-            const args = (event as any).args;
-            const tokenId = args.tokenId || args[2];
+            // Parse raw RPC log format: topics[3] is tokenId
+            const tokenIdHex = event.topics[3];
+            const tokenId = ethers.getBigInt(tokenIdHex);
             const tokenIdStr = tokenId.toString();
             
             if (seenTokenIds.has(tokenIdStr)) continue;
