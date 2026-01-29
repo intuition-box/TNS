@@ -1116,10 +1116,11 @@ export class Web3Service {
       
       // 1. Get domains from Controller NameRegistered events (includes domain name)
       try {
-        const controllerFilter = controllerContract.filters.NameRegistered(null, null, ownerAddress);
+        // Query all NameRegistered events and filter by current ownership
+        const controllerFilter = controllerContract.filters.NameRegistered();
         const controllerEvents = await controllerContract.queryFilter(controllerFilter, fromBlock, currentBlock);
         
-        console.log("Found", controllerEvents.length, "registration events for owner from Controller");
+        console.log("Found", controllerEvents.length, "total NameRegistered events from Controller");
         
         for (const event of controllerEvents) {
           try {
@@ -1132,9 +1133,11 @@ export class Web3Service {
             
             if (seenTokenIds.has(tokenIdStr)) continue;
             
+            // Check current ownership (domains may have been transferred)
             const currentOwner = await registrarContract.ownerOf(tokenId);
             if (currentOwner.toLowerCase() !== ownerAddress.toLowerCase()) continue;
             
+            console.log("Found owned domain from Controller:", domainName);
             seenTokenIds.add(tokenIdStr);
             
             const expires = await registrarContract.nameExpires(tokenId);
@@ -1145,7 +1148,7 @@ export class Web3Service {
             
             domains.push({
               id: tokenIdStr,
-              name: domainName,
+              name: domainName + ".trust",
               tokenId: tokenIdStr,
               owner: currentOwner,
               expirationDate: expirationDate.toISOString(),
