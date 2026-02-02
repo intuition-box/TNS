@@ -301,6 +301,17 @@ npx hardhat run scripts/verify-contracts.ts --network intuition
 
 ---
 
+## Security
+
+See [SECURITY.md](./SECURITY.md) for a comprehensive guide on verifying contract security, including:
+- Source code verification steps
+- ENS codebase comparison
+- Custom contract audit checklist
+- On-chain verification scripts
+- Common vulnerability analysis
+
+---
+
 ## License
 
 MIT - Forked from [ENS Contracts](https://github.com/ensdomains/ens-contracts)
