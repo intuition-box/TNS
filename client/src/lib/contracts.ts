@@ -540,23 +540,30 @@ export const TNS_PRICE_ORACLE_ABI = [
 // ============================================
 export const TNS_PAYMENT_FORWARDER_ABI = [
   {
-    inputs: [{ name: "domainName", type: "string" }],
-    name: "sendPayment",
+    inputs: [{ name: "name", type: "string" }],
+    name: "sendTo",
     outputs: [],
     stateMutability: "payable",
     type: "function"
   },
   {
-    inputs: [{ name: "domainName", type: "string" }],
-    name: "resolveAddress",
+    inputs: [{ name: "name", type: "string" }],
+    name: "resolve",
     outputs: [{ name: "", type: "address" }],
     stateMutability: "view",
     type: "function"
   },
   {
+    inputs: [{ name: "name", type: "string" }],
+    name: "namehash",
+    outputs: [{ name: "", type: "bytes32" }],
+    stateMutability: "pure",
+    type: "function"
+  },
+  {
     anonymous: false,
     inputs: [
-      { indexed: true, name: "domainName", type: "string" },
+      { indexed: true, name: "name", type: "string" },
       { indexed: true, name: "from", type: "address" },
       { indexed: true, name: "to", type: "address" },
       { indexed: false, name: "amount", type: "uint256" }

@@ -1832,7 +1832,7 @@ export class Web3Service {
       
       // Try to resolve from PaymentForwarder (uses resolver)
       try {
-        paymentAddress = await contract.resolveAddress(normalizedDomain);
+        paymentAddress = await contract.resolve(normalizedDomain);
         console.log("Payment address from resolver for", normalizedDomain, ":", paymentAddress);
       } catch (resolverError) {
         console.log("Resolver call failed, will try BaseRegistrar fallback:", resolverError);
@@ -1896,7 +1896,7 @@ export class Web3Service {
       let resolverAddress = ethers.ZeroAddress;
       
       try {
-        resolverAddress = await forwarderContract.resolveAddress(normalizedDomain);
+        resolverAddress = await forwarderContract.resolve(normalizedDomain);
         console.log("Resolver address for payment:", resolverAddress);
       } catch (resolverError) {
         console.log("Resolver call failed, will use direct transfer:", resolverError);
@@ -1906,7 +1906,7 @@ export class Web3Service {
         // Use PaymentForwarder for domains with resolver records
         console.log("Using PaymentForwarder for domain with resolver record");
         const forwarderWithSigner = new ethers.Contract(forwarderAddress, forwarderAbi, signer);
-        const tx = await forwarderWithSigner.sendPayment(normalizedDomain, {
+        const tx = await forwarderWithSigner.sendTo(normalizedDomain, {
           value: amountWei,
           gasLimit: 150000
         });
