@@ -1944,7 +1944,7 @@ export class Web3Service {
         const tx = await signer.sendTransaction({
           to: owner,
           value: amountWei,
-          gasLimit: 21000
+          gasLimit: 50000
         });
 
         console.log("Direct payment transaction sent:", tx.hash);
