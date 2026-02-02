@@ -11,7 +11,6 @@ This guide explains how to verify the security of the TNS (Trust Name Service) s
 3. [Custom Contract Audit](#3-custom-contract-audit)
 4. [On-Chain Verification](#4-on-chain-verification)
 5. [Common Vulnerability Checklist](#5-common-vulnerability-checklist)
-6. [Third-Party Audit Resources](#6-third-party-audit-resources)
 
 ---
 
@@ -242,29 +241,6 @@ console.log("Treasury:", treasury);
 | Reentrancy | ⚠️ Low Risk | No state after call |
 | Resolver trust | ⚠️ Medium | Domain owner controls |
 | Zero address | ✅ Safe | Explicit revert |
-
----
-
-## 6. Third-Party Audit Resources
-
-### Automated Analysis Tools
-
-Run static analysis on the contracts:
-
-```bash
-# Install Slither
-pip install slither-analyzer
-
-# Run analysis
-cd contracts/tns-ens
-slither . --config-file slither.config.json
-
-# Install Mythril
-pip install mythril
-
-# Run symbolic execution
-myth analyze registry/TNSRegistry.sol --solc-json solc-input.json
-```
 
 ---
 
