@@ -266,25 +266,6 @@ pip install mythril
 myth analyze registry/TNSRegistry.sol --solc-json solc-input.json
 ```
 
-### Recommended Audit Firms
-
-For a professional audit, consider:
-
-1. **Trail of Bits** - Audited original ENS contracts
-2. **OpenZeppelin** - Smart contract security experts
-3. **Consensys Diligence** - Ethereum security specialists
-4. **Sigma Prime** - Solidity auditing
-5. **Code4rena** - Competitive audit platform
-
-### Bug Bounty Considerations
-
-Consider setting up a bug bounty program:
-
-- **Critical** (funds at risk): Up to $50,000
-- **High** (significant impact): Up to $10,000
-- **Medium** (limited impact): Up to $2,000
-- **Low** (informational): Up to $500
-
 ---
 
 ## Quick Security Summary
