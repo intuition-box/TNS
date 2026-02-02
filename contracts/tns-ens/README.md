@@ -239,8 +239,6 @@ The PaymentForwarder follows the same pattern used by:
 
 | Name Length | Price (TRUST/year) |
 |-------------|-------------------|
-| 1 character | 1,000 TRUST |
-| 2 characters | 500 TRUST |
 | 3 characters | 100 TRUST |
 | 4 characters | 70 TRUST |
 | 5+ characters | 30 TRUST |
