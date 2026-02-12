@@ -23,15 +23,15 @@ export function ContractStats() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+    <div className="grid grid-cols-2 gap-4 sm:gap-6 max-w-3xl mx-auto">
       {/* Total Domains */}
       <Card className="trust-card">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Total NFTs</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+          <CardTitle className="text-xs sm:text-sm font-medium">Total NFTs</CardTitle>
           <Globe className="h-4 w-4 text-trust-blue" />
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
+        <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+          <div className="text-xl sm:text-2xl font-bold">
             {isLoading ? (
               <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-6 w-16 rounded"></div>
             ) : (
@@ -39,8 +39,8 @@ export function ContractStats() {
             )}
           </div>
           <div className="text-xs text-muted-foreground">
-            Domain NFTs minted
-            <Badge variant="secondary" className="mt-1">
+            <span className="block sm:inline">Domain NFTs minted</span>
+            <Badge variant="secondary" className="mt-1 ml-0 sm:ml-2">
               <Activity className="mr-1 h-3 w-3" />
               Live
             </Badge>
@@ -50,12 +50,12 @@ export function ContractStats() {
 
       {/* Active Users */}
       <Card className="trust-card">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">NFT Holders</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6 sm:pb-2">
+          <CardTitle className="text-xs sm:text-sm font-medium">NFT Holders</CardTitle>
           <Users className="h-4 w-4 text-trust-violet" />
         </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
+        <CardContent className="p-3 pt-0 sm:p-6 sm:pt-0">
+          <div className="text-xl sm:text-2xl font-bold">
             {isLoading ? (
               <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-6 w-16 rounded"></div>
             ) : (
@@ -63,8 +63,8 @@ export function ContractStats() {
             )}
           </div>
           <div className="text-xs text-muted-foreground">
-            Unique domain owners
-            <Badge variant="secondary" className="mt-1">
+            <span className="block sm:inline">Unique domain owners</span>
+            <Badge variant="secondary" className="mt-1 ml-0 sm:ml-2">
               <Activity className="mr-1 h-3 w-3" />
               Live
             </Badge>

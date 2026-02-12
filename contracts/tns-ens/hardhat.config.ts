@@ -29,6 +29,21 @@ const config: HardhatUserConfig = {
       url: "http://127.0.0.1:8545",
     },
   },
+  etherscan: {
+    apiKey: {
+      intuition: "no-api-key-needed",
+    },
+    customChains: [
+      {
+        network: "intuition",
+        chainId: 1155,
+        urls: {
+          apiURL: "https://explorer.intuition.systems/api",
+          browserURL: "https://explorer.intuition.systems",
+        },
+      },
+    ],
+  },
   paths: {
     sources: "./",
     tests: "./test",

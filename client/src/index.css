@@ -77,6 +77,28 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  
+  /* Safe area support for notched devices */
+  html {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  
+  /* Prevent text size adjustment on orientation change */
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  /* Better touch targets */
+  button, a, input, select, textarea {
+    min-height: 44px;
+  }
+  
+  /* Smooth scrolling on iOS */
+  .overflow-y-auto, .overflow-auto {
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -141,5 +163,51 @@
   
   .border-trust-violet {
     border-color: var(--trust-violet);
+  }
+  
+  /* Mobile-specific utilities */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  /* Touch-friendly spacing */
+  .touch-spacing {
+    @apply py-3 px-4;
+  }
+  
+  /* Hide scrollbar on mobile but allow scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Responsive text truncation */
+  .truncate-mobile {
+    @apply truncate max-w-[150px] sm:max-w-none;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Reduce padding on mobile */
+  .px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Stack buttons on mobile */
+  .mobile-stack {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .mobile-stack > * {
+    width: 100%;
   }
 }

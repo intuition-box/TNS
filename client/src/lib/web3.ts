@@ -1102,23 +1102,26 @@ export class Web3Service {
       // BaseRegistrar for ownership verification and migrated domain events
       const registrarAbi = [
         "event NameRegistered(uint256 indexed id, address indexed owner, uint256 expires)",
+        "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)",
         "function ownerOf(uint256 tokenId) view returns (address)",
         "function nameExpires(uint256 id) view returns (uint256)"
       ];
       const registrarContract = new ethers.Contract(baseRegistrarAddress, registrarAbi, provider);
       
       const currentBlock = await provider.getBlockNumber();
-      const fromBlock = Math.max(0, currentBlock - 1000000); // Look back 1M blocks
+      const fromBlock = 0; // Search all blocks from genesis
+      console.log("Searching blocks from", fromBlock, "to", currentBlock);
       
       const domains: any[] = [];
       const seenTokenIds = new Set<string>();
       
       // 1. Get domains from Controller NameRegistered events (includes domain name)
       try {
-        const controllerFilter = controllerContract.filters.NameRegistered(null, null, ownerAddress);
+        // Query all NameRegistered events and filter by current ownership
+        const controllerFilter = controllerContract.filters.NameRegistered();
         const controllerEvents = await controllerContract.queryFilter(controllerFilter, fromBlock, currentBlock);
         
-        console.log("Found", controllerEvents.length, "registration events for owner from Controller");
+        console.log("Found", controllerEvents.length, "total NameRegistered events from Controller");
         
         for (const event of controllerEvents) {
           try {
@@ -1131,9 +1134,11 @@ export class Web3Service {
             
             if (seenTokenIds.has(tokenIdStr)) continue;
             
+            // Check current ownership (domains may have been transferred)
             const currentOwner = await registrarContract.ownerOf(tokenId);
             if (currentOwner.toLowerCase() !== ownerAddress.toLowerCase()) continue;
             
+            console.log("Found owned domain from Controller:", domainName);
             seenTokenIds.add(tokenIdStr);
             
             const expires = await registrarContract.nameExpires(tokenId);
@@ -1144,7 +1149,7 @@ export class Web3Service {
             
             domains.push({
               id: tokenIdStr,
-              name: domainName,
+              name: domainName + ".trust",
               tokenId: tokenIdStr,
               owner: currentOwner,
               expirationDate: expirationDate.toISOString(),
@@ -1217,6 +1222,86 @@ export class Web3Service {
         }
       } catch (e) {
         console.log("Error fetching BaseRegistrar events:", e);
+      }
+      
+      // 3. Get domains from Transfer events (for migrated domains that may not have NameRegistered events)
+      try {
+        // Use direct RPC call for more reliable event filtering
+        const paddedAddress = "0x" + ownerAddress.slice(2).toLowerCase().padStart(64, '0');
+        const transferTopic = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+        
+        const rpcResponse = await fetch("https://intuition.calderachain.xyz", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            method: "eth_getLogs",
+            params: [{
+              fromBlock: "0x0",
+              toBlock: "latest",
+              address: baseRegistrarAddress,
+              topics: [transferTopic, null, paddedAddress]
+            }],
+            id: 1
+          })
+        });
+        
+        const rpcData = await rpcResponse.json();
+        const transferEvents = rpcData.result || [];
+        
+        console.log("Found", transferEvents.length, "Transfer events to owner (via RPC)");
+        
+        for (const event of transferEvents) {
+          try {
+            // Parse raw RPC log format: topics[3] is tokenId
+            const tokenIdHex = event.topics[3];
+            const tokenId = ethers.getBigInt(tokenIdHex);
+            const tokenIdStr = tokenId.toString();
+            
+            if (seenTokenIds.has(tokenIdStr)) continue;
+            
+            // Verify current ownership
+            const currentOwner = await registrarContract.ownerOf(tokenId);
+            if (currentOwner.toLowerCase() !== ownerAddress.toLowerCase()) continue;
+            
+            seenTokenIds.add(tokenIdStr);
+            
+            const expires = await registrarContract.nameExpires(tokenId);
+            const expirationDate = new Date(Number(expires) * 1000);
+            
+            // Try to get domain name from backend
+            let domainName = "";
+            try {
+              console.log("Looking up domain name for tokenId:", tokenIdStr);
+              const response = await fetch(`/api/domains/token/${tokenIdStr}`);
+              if (response.ok) {
+                const data = await response.json();
+                domainName = data.name || "";
+                console.log("Found domain name:", domainName);
+              }
+            } catch (lookupErr) {
+              console.log("Backend lookup error for tokenId:", tokenIdStr);
+            }
+            
+            if (domainName) {
+              domains.push({
+                id: tokenIdStr,
+                name: domainName,
+                tokenId: tokenIdStr,
+                owner: currentOwner,
+                expirationDate: expirationDate.toISOString(),
+                exists: true,
+                pricePerYear: domainName.length === 3 ? "100" : domainName.length === 4 ? "70" : "30",
+                records: [],
+                isMigrated: true,
+              });
+            }
+          } catch (err) {
+            continue;
+          }
+        }
+      } catch (e) {
+        console.log("Error fetching Transfer events:", e);
       }
       
       console.log("Found", domains.length, "active domains for owner");
@@ -1747,7 +1832,7 @@ export class Web3Service {
       
       // Try to resolve from PaymentForwarder (uses resolver)
       try {
-        paymentAddress = await contract.resolveAddress(normalizedDomain);
+        paymentAddress = await contract.resolve(normalizedDomain);
         console.log("Payment address from resolver for", normalizedDomain, ":", paymentAddress);
       } catch (resolverError) {
         console.log("Resolver call failed, will try BaseRegistrar fallback:", resolverError);
@@ -1811,7 +1896,7 @@ export class Web3Service {
       let resolverAddress = ethers.ZeroAddress;
       
       try {
-        resolverAddress = await forwarderContract.resolveAddress(normalizedDomain);
+        resolverAddress = await forwarderContract.resolve(normalizedDomain);
         console.log("Resolver address for payment:", resolverAddress);
       } catch (resolverError) {
         console.log("Resolver call failed, will use direct transfer:", resolverError);
@@ -1821,7 +1906,7 @@ export class Web3Service {
         // Use PaymentForwarder for domains with resolver records
         console.log("Using PaymentForwarder for domain with resolver record");
         const forwarderWithSigner = new ethers.Contract(forwarderAddress, forwarderAbi, signer);
-        const tx = await forwarderWithSigner.sendPayment(normalizedDomain, {
+        const tx = await forwarderWithSigner.sendTo(normalizedDomain, {
           value: amountWei,
           gasLimit: 150000
         });
@@ -1859,7 +1944,7 @@ export class Web3Service {
         const tx = await signer.sendTransaction({
           to: owner,
           value: amountWei,
-          gasLimit: 21000
+          gasLimit: 50000
         });
 
         console.log("Direct payment transaction sent:", tx.hash);

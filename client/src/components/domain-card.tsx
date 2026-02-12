@@ -573,36 +573,38 @@ export function DomainCard({ domain, walletAddress }: DomainCardProps) {
 
   return (
     <Card className="trust-card">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-trust-blue/10 rounded-lg flex items-center justify-center mr-4">
-              <Globe className="text-trust-blue h-5 w-5" />
+      <CardHeader className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center min-w-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-trust-blue/10 rounded-lg flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0">
+              <Globe className="text-trust-blue h-5 w-5 sm:h-6 sm:w-6" />
             </div>
-            <div>
-              <CardTitle className="text-lg" data-testid={`domain-name-${domain.name || 'unknown'}`}>
+            <div className="min-w-0 flex-1">
+              <CardTitle className="text-base sm:text-lg truncate" data-testid={`domain-name-${domain.name || 'unknown'}`}>
                 {domain.name || 'Unknown Domain'}
               </CardTitle>
-              <p className="text-sm text-gray-500" data-testid={`expiry-date-${domain.name || 'unknown'}`}>
+              <p className="text-xs sm:text-sm text-gray-500" data-testid={`expiry-date-${domain.name || 'unknown'}`}>
                 Expires: {domain.expirationDate ? new Date(domain.expirationDate).toLocaleDateString() : 'N/A'}
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            {domain.isPrimary && (
-              <Badge className="bg-trust-violet text-white" data-testid={`primary-badge-${domain.name || 'unknown'}`}>
-                Primary
-              </Badge>
-            )}
-            {getStatusBadge()}
+          <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {domain.isPrimary && (
+                <Badge className="bg-trust-violet text-white text-xs" data-testid={`primary-badge-${domain.name || 'unknown'}`}>
+                  Primary
+                </Badge>
+              )}
+              {getStatusBadge()}
+            </div>
             <Dialog open={isManageOpen} onOpenChange={setIsManageOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="sm" data-testid={`manage-${domain.name || 'unknown'}`}>
-                  <Settings className="h-4 w-4 mr-1" />
-                  Manage
+                <Button variant="outline" size="sm" className="min-h-[44px]" data-testid={`manage-${domain.name || 'unknown'}`}>
+                  <Settings className="h-4 w-4 sm:mr-1" />
+                  <span className="hidden sm:inline">Manage</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto w-[95vw] sm:w-full p-4 sm:p-6">
                 <DialogHeader>
                   <DialogTitle>Manage {domain.name || 'Domain'}</DialogTitle>
                   <DialogDescription>
@@ -610,22 +612,22 @@ export function DomainCard({ domain, walletAddress }: DomainCardProps) {
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Domain Info */}
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">Domain Information</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <h3 className="text-base sm:text-lg font-semibold mb-2 sm:mb-3">Domain Information</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
                       <div>
-                        <Label>Owner</Label>
+                        <Label className="text-xs sm:text-sm">Owner</Label>
                         <div className="flex items-center mt-1">
-                          <code className="text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded flex-1">
+                          <code className="text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded flex-1 truncate">
                             {domain.owner || 'Unknown Owner'}
                           </code>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => copyToClipboard(domain.owner || "", "Owner address")}
-                            className="ml-2"
+                            className="ml-1 sm:ml-2 min-h-[44px] min-w-[44px] p-2"
                           >
                             {copiedField === "Owner address" ? (
                               <Check className="h-4 w-4 text-green-500" />
@@ -636,16 +638,16 @@ export function DomainCard({ domain, walletAddress }: DomainCardProps) {
                         </div>
                       </div>
                       <div>
-                        <Label>Token ID</Label>
+                        <Label className="text-xs sm:text-sm">Token ID</Label>
                         <div className="flex items-center mt-1">
-                          <code className="text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded flex-1">
+                          <code className="text-xs bg-gray-100 dark:bg-gray-800 p-2 rounded flex-1 truncate">
                             {domain.tokenId || 'N/A'}
                           </code>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => copyToClipboard(domain.tokenId || "", "Token ID")}
-                            className="ml-2"
+                            className="ml-1 sm:ml-2 min-h-[44px] min-w-[44px] p-2"
                           >
                             {copiedField === "Token ID" ? (
                               <Check className="h-4 w-4 text-green-500" />
